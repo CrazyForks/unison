@@ -288,17 +288,17 @@ let fsmonitor_dir =
   | "Win32" -> "FSMDIR" <--? "fsmonitor/windows"
   | "FreeBSD" | "OpenBSD" | "NetBSD" | "DragonFly" ->
       begin
-        let libinotify_lib =
-          let pkg_lib = shell "pkg-config --libs libinotify 2> /dev/null || printf ' -linotify'" in
-          if not_empty pkg_lib then "-cclib '" ^ pkg_lib ^ "'" else "" in
-        let libinotify_inc =
-          let pkg_flags = shell "pkg-config --cflags libinotify 2> /dev/null" in
-          if not_empty pkg_flags then "-ccopt '" ^ pkg_flags ^ "'" else "" in
-        if shell ("{ printf '' > inotifytest__.ml ;" ^ ocamlc ^ " " ^
-          ($)"CAMLCFLAGS" ^ " " ^ ($)"CAMLLDFLAGS" ^ " " ^ libinotify_lib ^
-          " -o inotifytest__ inotifytest__.ml > /dev/null 2>&1 && printf true ; } ;\
-            rm -f inotifytest__.ml inotifytest__.cm[oix] \
-            inotifytest__.o inotifytest__ > /dev/null 2>&1") = "true" then begin
+        let libnotify_exists =
+          shell "pkg-config --exists libinotify && echo true" = "true" in
+        if libnotify_exists then begin
+          let libinotify_lib =
+            let pkg_lib = shell "pkg-config --libs libinotify 2> /dev/null" in
+            if not_empty pkg_lib then "-cclib '" ^ pkg_lib ^ "'" else ""
+          in
+          let libinotify_inc =
+            let pkg_flags = shell "pkg-config --cflags libinotify 2> /dev/null" in
+            if not_empty pkg_flags then "-ccopt '" ^ pkg_flags ^ "'" else ""
+          in
           if not_empty libinotify_inc then begin
             (* OpenBSD make does not support local variables *)
             let target = if osarch <> "OpenBSD" then "$(FSMCOBJS): " else "" in
